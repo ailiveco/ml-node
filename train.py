@@ -1,6 +1,9 @@
 import gymnasium as gym
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
+from ailive_envs.walking import HumanoidEnv
+from ailive_envs.standingup import HumanoidStandupEnv
+from ailive_envs.crawling import AiliveHumanoidCrawlingEnv
 import os
 import json
 import numpy as np
@@ -11,7 +14,7 @@ AGENT_NAME = "zero"
 SKILL_NAME = "walking"
 SESSION_ID = 0
 
-BASE_PATH = f"/var/mlwork/public/sessions/{AGENT_NAME}/{SKILL_NAME}"
+BASE_PATH = f"./public/sessions/{AGENT_NAME}/{SKILL_NAME}"
 TENSORBOARD_PATH = os.path.join(BASE_PATH, "tensorboard")
 MODELS_PATH = os.path.join(BASE_PATH, "models")
 OBS_PATH = os.path.join(BASE_PATH, "obs")
@@ -19,7 +22,6 @@ SAVE_INTERVAL = 5_000_000  # Save every 5 million steps
 TOTAL_TIMESTEPS = 100_000_000  # Total training timesteps
 MODEL = None
 STEPS_TRAINED = 0
-
 
 def export_obs(saved_steps_trained: int, replay_count: int = 10) -> None:
     """
@@ -61,7 +63,6 @@ def export_obs(saved_steps_trained: int, replay_count: int = 10) -> None:
 
     print(f"Exported observations ({replay_count} times): {obs_file_path}")
 
-
 def save_model() -> None:
     """
     Save the current model and export its observations.
@@ -74,7 +75,14 @@ def save_model() -> None:
         print(f"Model saved at {model_path}.")
         export_obs(STEPS_TRAINED)
 
-
+def getEnv(skill: str) -> classmethod:
+    if skill == "walking":
+        return HumanoidEnv
+    elif skill == "standingup":
+        return HumanoidStandupEnv
+    elif skill == "crawling":
+        return AiliveHumanoidCrawlingEnv
+    
 def main() -> None:
     """
     Main function to train and save the PPO model for Humanoid-v5.
@@ -82,8 +90,7 @@ def main() -> None:
     global MODEL, STEPS_TRAINED
 
     # Create the environment
-    env_id = "Humanoid-v5"
-    env = make_vec_env(env_id)
+    env = make_vec_env(getEnv(SKILL_NAME))
 
     # Initialize the PPO model
     print(f"TensorBoard logging at {TENSORBOARD_PATH}")
